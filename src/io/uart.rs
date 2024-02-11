@@ -1,6 +1,7 @@
-use crate::BASE_ADDRESS;
 use bitflags::{bitflags, Flags};
 use core::ptr::{read_volatile, write_volatile};
+
+use crate::cpu::RaspberryPi;
 
 #[derive(Clone, Copy, Debug)]
 pub struct Uart {
@@ -46,9 +47,13 @@ impl Uart {
     /// Creates a new instance of [Uart].
     ///
     /// # Safety
-    /// - This function assumes that the [BASE_ADDRESS] is valid.
-    pub const fn new() -> Uart {
-        let base_address = unsafe { BASE_ADDRESS.byte_offset(0x201000) as *mut u32 };
+    /// - This function assumes that the [RaspberryPi::peripheral_base_address] is valid.
+    pub fn new() -> Uart {
+        let base_address = unsafe {
+            RaspberryPi::instance()
+                .peripheral_base_address()
+                .byte_offset(0x201000) as *mut u32
+        };
         Uart {
             registers: unsafe { Registers::new(base_address) },
         }

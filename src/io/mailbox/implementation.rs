@@ -1,7 +1,6 @@
+use crate::{cpu::RaspberryPi, print, println};
 use bitflags::bitflags;
 use core::ptr::{read_volatile, write_volatile};
-
-use crate::{print, println, BASE_ADDRESS};
 
 #[derive(Debug, PartialEq, Eq, Copy, Clone)]
 #[repr(u32)]
@@ -41,7 +40,10 @@ bitflags! {
 impl Mailbox {
     /// Creates a new instance of the [Mailbox] for communication.
     pub unsafe fn new() -> Mailbox {
-        let base_address = BASE_ADDRESS.byte_offset(0xb880);
+        let base_address = RaspberryPi::instance()
+            .peripheral_base_address()
+            .byte_offset(0xb880);
+
         Mailbox {
             registers: Registers::new(base_address),
         }
