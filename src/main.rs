@@ -4,26 +4,39 @@
 global_asm!(include_str!("boot/boot.S"));
 
 mod console;
+mod mailbox;
 
 use core::{
     arch::{asm, global_asm},
     panic::PanicInfo,
 };
 
-const BASE_ADDRESS: u32 = 0x3F00_0000;
+use crate::mailbox::{test_mailbox, Mailbox};
+
+// TODO: Read the MIDR_EL1 register to determine the board type.
+//       https://developer.arm.com/documentation/ddi0601/2023-12/AArch64-Registers/MIDR-EL1--Main-ID-Register
+
+// Raspberry Pi 4:
+// const BASE_ADDRESS: u32 = 0xFE00_0000;
+
+// Raspberry Pi 3:
+const BASE_ADDRESS: *mut u8 = 0x3F00_0000 as *mut u8;
+
+#[no_mangle]
+pub extern "C" fn init() -> ! {
+    println!("[angeldust::init] hello from rust!");
+
+    let mailbox = unsafe { Mailbox::new() };
+    test_mailbox(&mailbox);
+
+    panic!("reached end of init()");
+}
 
 #[panic_handler]
 fn panic(info: &PanicInfo) -> ! {
-    println!("\n{}", info);
+    println!("\n[angeldust::panic] reached panic handler...\n{}", info);
 
     loop {
         unsafe { asm!("wfe") }
     }
-}
-
-#[no_mangle]
-pub extern "C" fn init() -> ! {
-    println!("Hello, World!");
-
-    panic!("reached end of init()");
 }
