@@ -1,0 +1,5 @@
+[build]
+target = "aarch64-unknown-none-softfloat"
+
+[target.aarch64-unknown-none-softfloat]
+runner = "qemu-system-aarch64 -d int -no-reboot -M raspi3b -serial stdio -kernel"
