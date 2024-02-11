@@ -11,6 +11,10 @@ impl fmt::Write for UartWriter {
     fn write_str(&mut self, s: &str) -> fmt::Result {
         for c in s.chars() {
             unsafe {
+                if c == '\n' {
+                    write_volatile(BASE_ADDRESS.byte_offset(0x201000), b'\r');
+                }
+
                 write_volatile(BASE_ADDRESS.byte_offset(0x201000), c as u8);
             }
         }
