@@ -1,24 +1,32 @@
-use core::{
-    fmt::{self, Write},
-    ptr::write_volatile,
-};
+use crate::{mutex::Mutex, uart::Uart};
+use core::fmt::{self, Write};
 
-use crate::BASE_ADDRESS;
+static UART: Mutex<Option<Uart>> = Mutex::new(None);
+
+pub fn initialize() {
+    let mut uart = Uart::new();
+    uart.initialize();
+
+    let mut uart_mut = UART.lock();
+    *uart_mut = Some(uart);
+}
 
 struct UartWriter;
 
 impl fmt::Write for UartWriter {
     fn write_str(&mut self, s: &str) -> fmt::Result {
-        for c in s.chars() {
-            unsafe {
+        if let Some(uart) = *UART.lock() {
+            for c in s.chars() {
                 if c == '\n' {
-                    write_volatile(BASE_ADDRESS.byte_offset(0x201000), b'\r');
+                    uart.write(b'\r')
                 }
 
-                write_volatile(BASE_ADDRESS.byte_offset(0x201000), c as u8);
+                uart.write(c as u8);
             }
         }
 
+        // We don't want to return an error if the UART hasn't been initialized yet,
+        // as that may cause a panic, which would end up being useless.
         Ok(())
     }
 }
