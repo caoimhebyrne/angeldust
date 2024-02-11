@@ -24,7 +24,7 @@ $ rustup target add aarch64-unknown-none-softfloat
 
 **4.** You can now use `cargo run` to run angeldust on a Raspberry Pi 3B in QEMU. 
 
-*(TODO: Add script for copying to SD card)*
+*(TODO: Add script for copying to SD card, aarch64-elf-binutils on macOS)*
 
 ### License
 
