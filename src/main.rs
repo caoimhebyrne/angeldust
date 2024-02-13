@@ -9,14 +9,13 @@ mod cpu;
 mod io;
 mod mutex;
 
+use crate::{
+    cpu::{raspberry_pi, RaspberryPi},
+    io::mailbox::{self, message::GetBoardMacAddress, Channel},
+};
 use core::{
     arch::{asm, global_asm},
     panic::PanicInfo,
-};
-
-use crate::{
-    cpu::{raspberry_pi, RaspberryPi},
-    io::{test_mailbox, Mailbox},
 };
 
 #[no_mangle]
@@ -39,8 +38,15 @@ pub extern "C" fn init() -> ! {
         board_type
     );
 
-    let mailbox = unsafe { Mailbox::new() };
-    test_mailbox(&mailbox);
+    // After we verify that this board is supported, initialize the global mailbox.
+    mailbox::initialize();
+
+    let mailbox = mailbox::instance();
+    let data = mailbox
+        .send_single::<_, GetBoardMacAddress>(Channel::PropertyTags, GetBoardMacAddress::new())
+        .expect("mailbox.send_single(GetBoardMacAddress) to succeed");
+
+    println!("[angeldust::init] mac address: {:#0x?}", data.bytes);
 
     panic!("reached end of init()");
 }

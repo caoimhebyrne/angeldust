@@ -1,4 +1,4 @@
-use crate::{io::Uart, mutex::Mutex};
+use crate::{io::uart::Uart, mutex::Mutex};
 use core::fmt::{self, Write};
 
 static UART: Mutex<Option<Uart>> = Mutex::new(None);

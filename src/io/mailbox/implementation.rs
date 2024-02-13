@@ -1,6 +1,21 @@
+use super::types::{Message, MessageStatus, MessageTag};
 use crate::{cpu::RaspberryPi, print, println};
 use bitflags::bitflags;
-use core::ptr::{read_volatile, write_volatile};
+use core::{
+    fmt::Debug,
+    ptr::{read_volatile, write_volatile},
+};
+
+#[derive(Debug)]
+pub enum MailboxError {
+    /// Occurs when the mailbox receives [MessageStatus::Error] as a response.
+    /// There's nothing that can be done to gain further information about this case.
+    Errored,
+
+    /// Occurs when the mailbox recieves [MessageStatus::Request] as a response.
+    /// There's nothing that can be done to gain further information about this case.
+    NotAcknowledged,
+}
 
 #[derive(Debug, PartialEq, Eq, Copy, Clone)]
 #[repr(u32)]
@@ -15,11 +30,13 @@ pub enum Channel {
 /// A [Mailbox] handles communication between the CPU and the VideoCore.
 ///
 /// https://github.com/raspberrypi/firmware/wiki/Mailboxes
+#[derive(Clone, Copy)]
 pub struct Mailbox {
     registers: Registers,
 }
 
 /// https://github.com/raspberrypi/firmware/wiki/Mailboxes#mailbox-registers
+#[derive(Clone, Copy)]
 struct Registers {
     // Mailbox 0 is used for reading.
     read: *mut u32,
@@ -39,14 +56,42 @@ bitflags! {
 
 impl Mailbox {
     /// Creates a new instance of the [Mailbox] for communication.
-    pub unsafe fn new() -> Mailbox {
-        let base_address = RaspberryPi::instance()
-            .peripheral_base_address()
-            .byte_offset(0xb880);
+    pub fn new() -> Mailbox {
+        let base_address = unsafe {
+            RaspberryPi::instance()
+                .peripheral_base_address()
+                .byte_offset(0xb880)
+        };
 
         Mailbox {
-            registers: Registers::new(base_address),
+            registers: unsafe { Registers::new(base_address) },
         }
+    }
+
+    pub fn send<Request: Debug, Response: Debug>(
+        &self,
+        channel: Channel,
+        request: Message<Request>,
+    ) -> Result<Response, MailboxError> {
+        // FIXME: Deal with memory caching when the MMU is enabled.
+        let ptr = (&request as *const Message<Request>) as u32;
+        self.write(ptr, channel);
+
+        let response = unsafe { read_volatile(ptr as *const Message<Response>) };
+        match response.status {
+            MessageStatus::Success => Ok(response.data),
+            MessageStatus::Error => Err(MailboxError::Errored),
+            MessageStatus::Request => Err(MailboxError::NotAcknowledged),
+        }
+    }
+
+    pub fn send_single<Request: Debug, Response: Debug>(
+        &self,
+        channel: Channel,
+        request: Request,
+    ) -> Result<Response, MailboxError> {
+        self.send::<_, MessageTag<Response>>(channel, Message::new(request))
+            .map(|it| it.data)
     }
 
     pub fn write(&self, value: u32, channel: Channel) {
@@ -116,3 +161,11 @@ impl Registers {
         }
     }
 }
+
+/// # Safety
+/// - We always use [Mailbox] within a [crate::Mutex].
+unsafe impl Send for Mailbox {}
+
+/// # Safety
+/// - We always use [Mailbox] within a [crate::Mutex].
+unsafe impl Sync for Mailbox {}
