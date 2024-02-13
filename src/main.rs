@@ -61,7 +61,7 @@ pub extern "C" fn init() -> ! {
 
 #[panic_handler]
 fn panic(info: &PanicInfo) -> ! {
-    println!("\n[angeldust::panic] reached panic handler...\n{}", info);
+    println!("[angeldust::panic] reached panic handler...\n{}", info);
 
     loop {
         unsafe { asm!("wfe") }
