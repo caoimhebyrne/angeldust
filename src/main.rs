@@ -11,7 +11,7 @@ mod mutex;
 
 use crate::{
     cpu::{raspberry_pi, RaspberryPi},
-    io::{framebuffer::Framebuffer, mailbox},
+    io::{framebuffer, mailbox},
 };
 use core::{
     arch::{asm, global_asm},
@@ -41,16 +41,12 @@ pub extern "C" fn init() -> ! {
     // After we verify that this board is supported, initialize the global mailbox.
     mailbox::initialize();
 
-    // TODO: Make a global framebuffer instance.
-
-    let mut framebuffer = Framebuffer::default();
-    framebuffer
-        .initialize(&mailbox::instance())
-        .expect("framebuffer to initialize");
+    // Once the mailbox is ready, we can initialize the framebuffer.
+    framebuffer::initialize();
 
     for x in 0..100 {
         for y in 0..100 {
-            framebuffer
+            framebuffer::instance()
                 .draw_pixel(x, y, 0xFF_0000FF)
                 .expect("failed to draw pixel");
         }
