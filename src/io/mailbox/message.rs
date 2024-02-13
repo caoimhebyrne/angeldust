@@ -14,6 +14,13 @@ pub enum TagIdentifier {
     GetBoardRevision = 0x1_0002,
     GetBoardMacAddress = 0x1_0003,
     GetArmMemory = 0x1_0005,
+
+    AllocateBuffer = 0x4_0001,
+    SetPhysicalDisplaySize = 0x4_8003,
+    SetVirtualDisplaySize = 0x4_8004,
+    SetDepth = 0x4_8005,
+    SetPixelOrder = 0x4_8006,
+    GetPitch = 0x4_0008,
 }
 
 #[derive(Debug, Clone, Copy, Default)]

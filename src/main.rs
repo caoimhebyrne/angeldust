@@ -11,7 +11,7 @@ mod mutex;
 
 use crate::{
     cpu::{raspberry_pi, RaspberryPi},
-    io::mailbox::{self, message::GetBoardMacAddress, Channel},
+    io::{framebuffer::Framebuffer, mailbox},
 };
 use core::{
     arch::{asm, global_asm},
@@ -41,12 +41,20 @@ pub extern "C" fn init() -> ! {
     // After we verify that this board is supported, initialize the global mailbox.
     mailbox::initialize();
 
-    let mailbox = mailbox::instance();
-    let data = mailbox
-        .send_single::<_, GetBoardMacAddress>(Channel::PropertyTags, GetBoardMacAddress::new())
-        .expect("mailbox.send_single(GetBoardMacAddress) to succeed");
+    // TODO: Make a global framebuffer instance.
 
-    println!("[angeldust::init] mac address: {}", data.address);
+    let mut framebuffer = Framebuffer::default();
+    framebuffer
+        .initialize(&mailbox::instance())
+        .expect("framebuffer to initialize");
+
+    for x in 0..100 {
+        for y in 0..100 {
+            framebuffer
+                .draw_pixel(x, y, 0xFF_0000FF)
+                .expect("failed to draw pixel");
+        }
+    }
 
     panic!("reached end of init()");
 }
