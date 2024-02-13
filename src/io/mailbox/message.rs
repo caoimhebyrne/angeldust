@@ -3,6 +3,8 @@
 // Not all messages will be used.
 #![allow(dead_code)]
 
+use crate::io::mac::MacAddress;
+
 use super::types::MessageTag;
 
 #[derive(Debug, Clone, Copy)]
@@ -23,7 +25,7 @@ pub struct GetFirmwareVersionMessage {
 #[derive(Debug, Clone, Copy, Default)]
 #[repr(C)]
 pub struct GetBoardMacAddress {
-    pub bytes: [u8; 6],
+    pub address: MacAddress,
 }
 
 #[derive(Debug, Clone, Copy, Default)]

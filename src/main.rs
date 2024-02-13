@@ -46,7 +46,7 @@ pub extern "C" fn init() -> ! {
         .send_single::<_, GetBoardMacAddress>(Channel::PropertyTags, GetBoardMacAddress::new())
         .expect("mailbox.send_single(GetBoardMacAddress) to succeed");
 
-    println!("[angeldust::init] mac address: {:#0x?}", data.bytes);
+    println!("[angeldust::init] mac address: {}", data.address);
 
     panic!("reached end of init()");
 }
