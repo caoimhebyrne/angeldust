@@ -6,6 +6,7 @@ use crate::io::mailbox::{types::MessageTag, TagIdentifier};
 pub struct FramebufferInitializeRequest {
     pub set_physical_size_request: MessageTag<SetDisplaySizeMessage>,
     pub set_virtual_size_request: MessageTag<SetDisplaySizeMessage>,
+    pub set_virtual_offset_request: MessageTag<SetVirtualOffsetMessage>,
     pub set_depth_request: MessageTag<SetDepthMessage>,
     pub set_pixel_order_request: MessageTag<SetPixelOrderMessage>,
     pub allocate_buffer_request: MessageTag<AllocateBufferRequest>,
@@ -18,6 +19,7 @@ pub struct FramebufferInitializeRequest {
 pub struct FramebufferInitializeResponse {
     set_physical_size_response: MessageTag<SetDisplaySizeMessage>,
     set_virtual_size_response: MessageTag<SetDisplaySizeMessage>,
+    set_virtual_offset_response: MessageTag<SetVirtualOffsetMessage>,
     set_depth_response: MessageTag<SetDepthMessage>,
     set_pixel_order_response: MessageTag<SetPixelOrderMessage>,
     allocate_buffer_response: MessageTag<AllocateBufferResponse>,
@@ -48,6 +50,10 @@ impl FramebufferInitializeResponse {
 
     pub fn get_pitch_response(&self) -> GetPitchMessage {
         self.get_pitch_response.data
+    }
+
+    pub fn set_virtual_offset_response(&self) -> SetVirtualOffsetMessage {
+        self.set_virtual_offset_response.data
     }
 }
 
@@ -182,6 +188,25 @@ impl GetPitchMessage {
         MessageTag::new(
             TagIdentifier::GetPitch,
             GetPitchMessage { bytes_per_line: 0 },
+        )
+    }
+}
+
+/// Sets the virtual display's offset.
+/// https://github.com/raspberrypi/firmware/wiki/Mailbox-property-interface#set-virtual-offset
+#[repr(C)]
+#[derive(Debug, Clone, Copy)]
+pub struct SetVirtualOffsetMessage {
+    pub x: u32,
+    pub y: u32,
+}
+
+impl SetVirtualOffsetMessage {
+    /// A helper function for creating a [MessageTag] for this request.
+    pub fn new(x: u32, y: u32) -> MessageTag<SetVirtualOffsetMessage> {
+        MessageTag::new(
+            TagIdentifier::SetVirtualOffset,
+            SetVirtualOffsetMessage { x, y },
         )
     }
 }

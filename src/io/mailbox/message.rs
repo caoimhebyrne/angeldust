@@ -21,6 +21,7 @@ pub enum TagIdentifier {
     SetDepth = 0x4_8005,
     SetPixelOrder = 0x4_8006,
     GetPitch = 0x4_0008,
+    SetVirtualOffset = 0x4_8009,
 }
 
 #[derive(Debug, Clone, Copy, Default)]

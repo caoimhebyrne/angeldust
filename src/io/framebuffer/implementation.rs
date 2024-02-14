@@ -1,6 +1,7 @@
 use super::message::{
     AllocateBufferRequest, FramebufferInitializeRequest, FramebufferInitializeResponse, PixelOrder,
 };
+use crate::io::framebuffer::message::SetVirtualOffsetMessage;
 use crate::mailbox::{types::Message, Channel, Mailbox, MailboxError};
 use crate::{
     io::framebuffer::message::{
@@ -80,6 +81,7 @@ impl Framebuffer {
         let request = FramebufferInitializeRequest {
             set_physical_size_request: SetDisplaySizeMessage::new_physical(1280, 720),
             set_virtual_size_request: SetDisplaySizeMessage::new_virtual(1280, 720),
+            set_virtual_offset_request: SetVirtualOffsetMessage::new(0, 0),
             set_depth_request: SetDepthMessage::new(32),
             set_pixel_order_request: SetPixelOrderMessage::new(PixelOrder::BGR),
             allocate_buffer_request: AllocateBufferRequest::new(4096),
@@ -96,7 +98,7 @@ impl Framebuffer {
 
         // If everything is valid, we can continue to set the info.
         self.info = Some(FramebufferInfo {
-            address: response.allocate_buffer_response().base_address as *mut u32,
+            address: (response.allocate_buffer_response().base_address & 0x3FFFFFFF) as *mut u32,
             // size: response.allocate_buffer_response().size,
             pitch: response.get_pitch_response().bytes_per_line,
         });
