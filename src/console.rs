@@ -11,6 +11,10 @@ pub fn initialize() {
     *uart_mut = Some(uart);
 }
 
+pub fn clear() {
+    write!(UartWriter, "{}[2J", 27 as char).ok();
+}
+
 struct UartWriter;
 
 impl fmt::Write for UartWriter {
