@@ -81,7 +81,7 @@ impl Framebuffer {
             set_physical_size_request: SetDisplaySizeMessage::new_physical(1280, 720),
             set_virtual_size_request: SetDisplaySizeMessage::new_virtual(1280, 720),
             set_depth_request: SetDepthMessage::new(32),
-            set_pixel_order_request: SetPixelOrderMessage::new(PixelOrder::RGB),
+            set_pixel_order_request: SetPixelOrderMessage::new(PixelOrder::BGR),
             allocate_buffer_request: AllocateBufferRequest::new(4096),
             get_pitch_request: GetPitchMessage::new(),
         };
@@ -131,6 +131,50 @@ impl Framebuffer {
         Ok(())
     }
 
+    /// Fills an area on the framebuffer from (x, y) to (x + width, y + height).
+    /// The [color] is in ABGR format.
+    /// ## Errors
+    /// - [FramebufferError::NotInitialized] if [Framebuffer::initialize] has not been called yet.
+    ///
+    /// ## Safety
+    /// - This function assumes that [FramebufferInfo::address] is valid.
+    pub fn fill_area(
+        &self,
+        x: u32,
+        y: u32,
+        width: u32,
+        height: u32,
+        color: u32,
+    ) -> Result<(), FramebufferError> {
+        let info = match self.info {
+            Some(value) => value,
+            None => return Err(FramebufferError::NotInitialized),
+        };
+
+        let mut line = unsafe {
+            info.address
+                .byte_add(((y * info.pitch) + (x * 4)).try_into().unwrap())
+        };
+
+        let mut rect_y: u32 = 0;
+        while rect_y < height - y {
+            let mut rect_x = 0;
+            let mut pixel = line;
+
+            while rect_x < width - x {
+                unsafe { (pixel as *mut u32).write(color) };
+
+                rect_x += 1;
+                pixel = unsafe { pixel.byte_add(4) };
+            }
+
+            rect_y += 1;
+            line = unsafe { line.byte_add(info.pitch.try_into().unwrap()) }
+        }
+
+        Ok(())
+    }
+
     /// Validates a [FramebufferInitializeResponse] by making sure values are either not 0, or
     /// set to their supported values.
     fn validate_response(
@@ -153,7 +197,7 @@ impl Framebuffer {
 
         // Ensure that the pixel order is RGB.
         let pixel_order = response.set_pixel_order_response().pixel_order;
-        if pixel_order != PixelOrder::RGB {
+        if pixel_order != PixelOrder::BGR {
             return Err(FramebufferError::UnsupportedPixelOrder(pixel_order));
         }
 
