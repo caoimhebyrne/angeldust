@@ -2,7 +2,7 @@
 
 set -e
 
-BOOT_DIRECTORY="/Volumes/boot"
+BOOT_DIRECTORY="/Volumes/bootfs"
 
 # Notify that the script will halt until the folder exists
 if [ ! -d "${BOOT_DIRECTORY}" ] || [ ! -w "${BOOT_DIRECTORY}" ]
