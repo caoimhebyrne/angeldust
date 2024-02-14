@@ -12,7 +12,7 @@ pub fn initialize() {
     let mut framebuffer = Framebuffer::default();
     framebuffer
         .initialize(&mailbox::instance())
-        .expect("failed to initialize framebuffer");
+        .expect("framebuffer::initialize() failed");
 
     *FRAMEBUFFER.lock() = Some(framebuffer);
 }

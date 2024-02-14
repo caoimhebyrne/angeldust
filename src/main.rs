@@ -44,20 +44,16 @@ pub extern "C" fn init() -> ! {
     // Once the mailbox is ready, we can initialize the framebuffer.
     framebuffer::initialize();
 
-    for x in 0..100 {
-        for y in 0..100 {
-            framebuffer::instance()
-                .draw_pixel(x, y, 0xFF_0000FF)
-                .expect("failed to draw pixel");
-        }
-    }
+    framebuffer::instance()
+        .fill_area(50, 50, 1280 - 50, 720 - 50, 0xFF_FF0000)
+        .expect("framebuffer::fill_area() failed");
 
     panic!("reached end of init()");
 }
 
 #[panic_handler]
 fn panic(info: &PanicInfo) -> ! {
-    println!("[angeldust::panic] reached panic handler...\n{}", info);
+    println!("\n{}", info);
 
     loop {
         unsafe { asm!("wfe") }
