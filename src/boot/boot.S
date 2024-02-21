@@ -8,17 +8,48 @@ _start:
     // Store the processor ID in `x0`.
     mrs     x0, mpidr_el1
     and     x0, x0, #3
-
-    // TODO: If the processor id is 0 (cbz), drop exception levels as expected.
-    cbz     x0, el1_entry
+    cbz     x0, check_el_and_drop
 
     // Otherwise, halt the processor indefinately.
 halt:  
     wfe
     b       halt
 
-/*
-drop_to_el1:
+check_el_and_drop:
+    // Store the current exception level in `x0`.
+    mrs     x0, CurrentEL
+    and     x0, x0, #0xC
+    cmp     x0, #8
+
+    // if (x0 & 0xC) == 8:
+    b.eq    el2_to_el1
+
+    // if (x0 & 0xC) > 8:
+    b.gt    el3_to_el2
+
+    // else:
+    b el1_entry
+
+el3_to_el2:
+    // Initialize SCLTR_EL2 and HCR_EL2 before entering EL2
+    msr sctlr_el2, xzr
+    msr hcr_el2, xzr
+
+    mrs x0, SCR_EL3
+    orr x0, x0, #(0b1<<10) // 0b1 = The execution state for EL2 is AArch64.
+    orr x0, x0, #(0b1<<0)  // 0b1 = EL1 is non-secure world.
+    msr SCR_EL3, x0
+
+    mov X0, #0b01001     // 0b01001 = EL2h
+    msr SPSR_EL3, X0
+
+    // Go to the `el2_to_el1` routine when in EL2 (after eret).
+    adr x0, el2_to_el1
+    msr elr_el3, x0
+
+    eret
+
+el2_to_el1:
     // Allow SIMD and floating point registers to be accessed in EL1.
     mov x0, #(0b11 << 20)     // 0b11 = This control does not cause execution of any instructions to be trapped.
     msr cpacr_el1, x0
@@ -36,7 +67,6 @@ drop_to_el1:
     msr elr_el2, x0
 
     eret
-*/
 
 el1_entry:
     // We should be in EL1 now!
