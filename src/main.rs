@@ -32,8 +32,6 @@ pub extern "C" fn init() -> ! {
         panic!("the board type {:?} is not supported", board_type);
     }
 
-    console::clear();
-
     println!("[angeldust::init] hello from rust!");
     println!(
         "[angeldust::init] raspberry pi board type: {:?}",
