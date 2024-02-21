@@ -10,6 +10,7 @@ mod io;
 mod mutex;
 
 use crate::{
+    arch::aarch64::currentel::CurrentELRegister,
     cpu::{raspberry_pi, RaspberryPi},
     io::{framebuffer, mailbox},
 };
@@ -37,6 +38,20 @@ pub extern "C" fn init() -> ! {
         "[angeldust::init] raspberry pi board type: {:?}",
         board_type
     );
+
+    // If we are not on Exception Level 1, we need to bail out, something has gone wrong.
+    let el_register = CurrentELRegister::read();
+    println!(
+        "[angeldust::init] running in exception level {}",
+        el_register.exception_level
+    );
+
+    if el_register.exception_level != 1 {
+        panic!(
+            "expected to be in exception level 1, but is in level {}",
+            el_register.exception_level
+        );
+    }
 
     // After we verify that this board is supported, initialize the global mailbox.
     mailbox::initialize();
